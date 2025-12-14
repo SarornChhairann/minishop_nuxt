@@ -13,7 +13,7 @@ app.use(morgan('dev'));
 app.use(cors());
 
 // Configure Multer for file uploads
-const uploadDir = path.join(__dirname, "../",process.env.PRODUCT_IMAGE_PATH); // product path
+const uploadDir = path.join(__dirname, process.env.PRODUCT_IMAGE_PATH); // product path
 
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
@@ -71,7 +71,7 @@ pool.connect((err, client, release) => {
 });
 
 // Serve uploaded images statically
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Handle Multer errors
 const handleMulterError = (err, req, res, next) => {
@@ -485,9 +485,9 @@ app.get('/api/orders/:id',async (req, res) => {
 })
 
 app.listen(process.env.PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${process.env.PORT}`);
-    console.log(`📁 Upload directory: ${uploadDir}`);
-    console.log(`🌐 Image access: http://localhost:${process.env.PORT}/uploads/products/`);
+    console.log(`Server running on http://localhost:${process.env.PORT}`);
+    console.log(`Upload directory: ${uploadDir}`);
+    console.log(`Image access: http://localhost:${process.env.PORT}/uploads/products/`);
 });
 
 module.exports = app;
