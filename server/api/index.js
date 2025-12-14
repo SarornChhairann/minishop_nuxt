@@ -9,7 +9,6 @@ require('dotenv').config();
 
 const app = express();
 
-// Middleware - IMPORTANT: Remove express.json() for upload routes
 app.use(morgan('dev'));
 app.use(cors());
 
@@ -56,8 +55,8 @@ const pool = new Pool({
     database: process.env.DB_NAME,
     password: process.env.DB_PASSWORD,
     port: process.env.DB_PORT,
-    ssl: true,
-    max: 1, // Important for serverless - use 1 connection
+    ssl: { rejectUnauthorized: false },
+    max: 2,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000
 });
@@ -87,8 +86,8 @@ const handleMulterError = (err, req, res, next) => {
     next();
 };
 
-
-app.use(express.json()); // For JSON requests
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get('/api/products', async (req, res) => {
     try {
@@ -490,3 +489,5 @@ app.listen(process.env.PORT, () => {
     console.log(`📁 Upload directory: ${uploadDir}`);
     console.log(`🌐 Image access: http://localhost:${process.env.PORT}/uploads/products/`);
 });
+
+module.exports = app;
