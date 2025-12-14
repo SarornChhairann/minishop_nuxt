@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Just keep the essential body style */
+body {
+    font-family: 'Inter', sans-serif;
+}
