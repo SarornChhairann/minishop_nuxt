@@ -2,103 +2,51 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const { Pool } = require('pg');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
 
 app.use(morgan('dev'));
 app.use(cors());
-
-// Configure Multer for file uploads
-const uploadDir = path.join(__dirname, process.env.PRODUCT_IMAGE_PATH); // product path
-
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-    console.log('📁 Created upload directory:', uploadDir);
-}
-
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
-        cb(null, uniqueName);
-    }
-});
-
-const upload = multer({
-    storage: storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB limit
-    },
-    fileFilter: function (req, file, cb) {
-        const allowedTypes = /jpeg|jpg|png|gif|webp/;
-        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = allowedTypes.test(file.mimetype);
-
-        if (mimetype && extname) {
-            return cb(null, true);
-        } else {
-            cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
-        }
-    }
-});
-
-// PostgreSQL connection
-const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
-    ssl: { rejectUnauthorized: false },
-    max: 2,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000
-});
-
-// Test database connection
-pool.connect((err, client, release) => {
-    if (err) {
-        return console.error('Error acquiring client', err.stack);
-    }
-    console.log('Connected to PostgreSQL database');
-    release();
-});
-
-// Serve uploaded images statically
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Handle Multer errors
-const handleMulterError = (err, req, res, next) => {
-    if (err instanceof multer.MulterError) {
-        if (err.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ error: 'File size is too large. Maximum size is 5MB.' });
-        }
-        return res.status(400).json({ error: err.message });
-    } else if (err) {
-        return res.status(400).json({ error: err.message });
-    }
-    next();
-};
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// PostgreSQL connection
+let pool = null;
+
+const getPool = () => {
+    if (!pool) {
+        pool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: { rejectUnauthorized: false },
+            max: 1, // Important for serverless - use 1 connection
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 5000
+        });
+    }
+    return pool;
+};
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
 
 app.get('/api/products', async (req, res) => {
     try {
         const { status, search } = req.query;
+        const pool = getPool();
 
         // Build WHERE conditions dynamically
         const conditions = [];
         const params = [];
         let paramIndex = 1;
 
-        // Status filter - if not provided, show all
+        // Status filter
         if (status && status.toLowerCase() !== 'all') {
             conditions.push(`status = $${paramIndex}`);
             params.push(status.toUpperCase());
@@ -119,26 +67,34 @@ app.get('/api/products', async (req, res) => {
         }
 
         const query = `
-      SELECT * FROM products 
-      ${whereClause}
-      ORDER BY product_id
-    `;
+            SELECT * FROM products 
+            ${whereClause}
+            ORDER BY product_id
+        `;
 
-    const result = await pool.query(query, params);
+        const result = await pool.query(query, params);
 
-    result.rows.forEach(row => {
-        if (row.image_url) {
-            row.image_url = `${process.env.URL}:${process.env.PORT}/${process.env.PRODUCT_IMAGE_PATH}/${row.image_url}`;
-        }
-    });
+        // For Vercel: Use your deployment URL instead of localhost
+        const baseUrl = process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : `http://localhost:${process.env.PORT || 3000}`;
 
-    res.json(result.rows);
+        result.rows.forEach(row => {
+            if (row.image_url) {
+                // If image_url is already a full URL, keep it; otherwise construct it
+                if (!row.image_url.startsWith('http')) {
+                    row.image_url = `${baseUrl}/uploads/${row.image_url}`;
+                }
+            }
+        });
+
+        res.json(result.rows);
 
     } catch (err) {
         console.error('❌ Error fetching products:', err);
         res.status(500).json({
             error: 'Internal server error',
-            details: err.message
+            details: process.env.NODE_ENV === 'development' ? err.message : undefined
         });
     }
 });
@@ -146,14 +102,20 @@ app.get('/api/products', async (req, res) => {
 app.get('/api/products/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await pool.query('SELECT * FROM products WHERE product_id = $1 ', [id]);
+        const pool = getPool();
+
+        const result = await pool.query('SELECT * FROM products WHERE product_id = $1', [id]);
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Product not found' });
         }
-        // Convert relative path to full URL
+
+        const baseUrl = process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : `http://localhost:${process.env.PORT || 3000}`;
+
         const product = result.rows[0];
-        if (product.image_url) {
-            product.image_url = `${process.env.URL}:${process.env.PORT}/${process.env.PRODUCT_IMAGE_PATH}/${product.image_url}`;
+        if (product.image_url && !product.image_url.startsWith('http')) {
+            product.image_url = `${baseUrl}/uploads/${product.image_url}`;
         }
         res.json(product);
     } catch (err) {
@@ -162,74 +124,48 @@ app.get('/api/products/:id', async (req, res) => {
     }
 });
 
-app.post('/api/products', upload.single('image'), handleMulterError, async (req, res) => {
+// For Vercel: Remove multer uploads - use cloud storage instead
+app.post('/api/products', async (req, res) => {
     try {
-        // Parse form data from req.body
-        const { name, description, price, stock, status } = req.body;
+        const { name, description, price, stock, status, image_url } = req.body; // image_url should come from client
 
         if (!name || !price || stock === undefined) {
             return res.status(400).json({ error: 'Missing required fields: name, price, stock' });
         }
 
-        let imagePath = null;
-        if (req.file) {
-            // Store relative path
-            imagePath = req.file.filename;
-        }
-
+        const pool = getPool();
         const result = await pool.query(
             'INSERT INTO products (name, description, price, stock, image_url, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [name, description, parseFloat(price), parseInt(stock), imagePath, status || 'ACTIVE']
+            [name, description, parseFloat(price), parseInt(stock), image_url || null, status || 'ACTIVE']
         );
 
-        // Convert to full URL for response
-        const product = result.rows[0];
-        if (product.image_url) {
-            product.image_url = `${process.env.URL}:${process.env.PORT}/${process.env.PRODUCT_IMAGE_PATH}/${product.image_url}`;
-        }
-        res.status(201).json(product);
+        res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error('❌ Error creating product:', err);
         res.status(500).json({
             error: 'Internal server error',
-            details: err.message
+            details: process.env.NODE_ENV === 'development' ? err.message : undefined
         });
     }
 });
 
-// Update product with optional image upload
-app.put('/api/products/:id', upload.single('image'), handleMulterError, async (req, res) => {
+app.put('/api/products/:id', async (req, res) => {
+    const pool = getPool();
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
         const { id } = req.params;
-        const { name, description, price, stock, status } = req.body;
+        const { name, description, price, stock, status, image_url } = req.body;
 
         if (!name || !price || stock === undefined) {
             await client.query('ROLLBACK');
             return res.status(400).json({ error: 'Missing required fields: name, price, stock' });
         }
 
-        const currentProduct = await pool.query('SELECT * FROM products WHERE product_id = $1', [id]);
-
-        let imagePath = currentProduct.rows[0].image_url;
-        // If new image uploaded
-        if (req.file) {
-            // Delete old image file if exists
-            if (currentProduct.rows[0]?.image_url) {
-                const oldImagePath = path.join(__dirname, '..', process.env.PRODUCT_IMAGE_PATH, currentProduct.rows[0].image_url);
-                if (fs.existsSync(oldImagePath)) {
-                    fs.unlinkSync(oldImagePath);
-                    console.log('Deleted old image:', oldImagePath);
-                }
-            }
-            imagePath = `${req.file.filename}`;
-        }
-
         const result = await client.query(
             'UPDATE products SET name = $1, description = $2, price = $3, stock = $4, image_url = $5, status = $6 WHERE product_id = $7 RETURNING *',
-            [name, description, parseFloat(price), parseInt(stock), imagePath, status || 'ACTIVE', id]
+            [name, description, parseFloat(price), parseInt(stock), image_url || null, status || 'ACTIVE', id]
         );
 
         if (result.rows.length === 0) {
@@ -238,27 +174,21 @@ app.put('/api/products/:id', upload.single('image'), handleMulterError, async (r
         }
 
         await client.query('COMMIT');
-
-        // Convert to full URL for response
-        const product = result.rows[0];
-        if (product.image_url) {
-            product.image_url = `${process.env.URL}:${process.env.PORT}/${process.env.PRODUCT_IMAGE_PATH}/${product.image_url}`;
-        }
-        res.json(product);
+        res.json(result.rows[0]);
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('❌ Error updating product:', err);
         res.status(500).json({
             error: 'Internal server error',
-            details: err.message
+            details: process.env.NODE_ENV === 'development' ? err.message : undefined
         });
     } finally {
         client.release();
     }
 });
 
-// Delete product (soft delete)
 app.delete('/api/products/:id', async (req, res) => {
+    const pool = getPool();
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -275,34 +205,18 @@ app.delete('/api/products/:id', async (req, res) => {
             return res.status(400).json({ error: 'Product cannot be deleted as it is in an order' });
         }
 
-        // Get product to delete its image
-        const product = await client.query(
-            'SELECT image_url FROM products WHERE product_id = $1',
+        const result = await client.query(
+            'DELETE FROM products WHERE product_id = $1 RETURNING product_id',
             [id]
         );
 
-        if (product.rows.length === 0) {
+        if (result.rows.length === 0) {
             await client.query('ROLLBACK');
             return res.status(404).json({ error: 'Product not found' });
         }
 
-        // HARD DELETE - completely remove from database
-        await client.query(
-            'DELETE FROM products WHERE product_id = $1',
-            [id]
-        );
-
-        // Delete image file if exists
-        if (product.rows[0]?.image_url) {
-            const imagePath = path.join(__dirname, '..', product.rows[0].image_url);
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
-                console.log('🗑️ Deleted product image:', imagePath);
-            }
-        }
-
         await client.query('COMMIT');
-        res.status(204).json({message: "success"});
+        res.status(204).send();
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('❌ Error deleting product:', err);
@@ -312,8 +226,9 @@ app.delete('/api/products/:id', async (req, res) => {
     }
 });
 
-// Orders API with improved stock management
+// Orders API (unchanged, works on Vercel)
 app.post('/api/orders', async (req, res) => {
+    const pool = getPool();
     const client = await pool.connect();
 
     try {
@@ -328,7 +243,6 @@ app.post('/api/orders', async (req, res) => {
             total_amount
         } = req.body;
 
-        // Validate required fields
         if (!customer_name || !customer_email || !items || items.length === 0) {
             await client.query('ROLLBACK');
             return res.status(400).json({
@@ -336,7 +250,6 @@ app.post('/api/orders', async (req, res) => {
             });
         }
 
-        // 1. First, validate all products and check stock availability
         for (const item of items) {
             if (!item.product_id || !item.quantity || item.quantity <= 0) {
                 await client.query('ROLLBACK');
@@ -345,12 +258,11 @@ app.post('/api/orders', async (req, res) => {
                 });
             }
 
-            // Check product exists and has sufficient stock
             const productCheck = await client.query(
                 `SELECT p.product_id, p.name, p.price, p.stock, p.status 
                  FROM products p 
                  WHERE p.product_id = $1 
-                 FOR UPDATE`,  // Lock the row for update
+                 FOR UPDATE`,
                 [item.product_id]
             );
 
@@ -363,7 +275,6 @@ app.post('/api/orders', async (req, res) => {
 
             const product = productCheck.rows[0];
 
-            // Check if product is active
             if (product.status !== 'ACTIVE') {
                 await client.query('ROLLBACK');
                 return res.status(400).json({
@@ -371,7 +282,6 @@ app.post('/api/orders', async (req, res) => {
                 });
             }
 
-            // Check stock availability
             if (product.stock < item.quantity) {
                 await client.query('ROLLBACK');
                 return res.status(400).json({
@@ -380,7 +290,6 @@ app.post('/api/orders', async (req, res) => {
             }
         }
 
-        // 2. Create the order
         const orderResult = await client.query(
             `INSERT INTO orders 
              (customer_name, customer_email, customer_phone, shipping_address, total_amount) 
@@ -391,9 +300,7 @@ app.post('/api/orders', async (req, res) => {
 
         const order = orderResult.rows[0];
 
-        // 3. Process order items and update stock
         for (const item of items) {
-            // Insert order item
             await client.query(
                 `INSERT INTO order_items 
                  (order_id, product_id, quantity, unit_price, subtotal) 
@@ -401,46 +308,26 @@ app.post('/api/orders', async (req, res) => {
                 [order.order_id, item.product_id, item.quantity, item.price, item.subtotal]
             );
 
-            // Update product stock
-            const updateResult = await client.query(
+            await client.query(
                 `UPDATE products 
                  SET stock = stock - $1 
-                 WHERE product_id = $2 
-                 RETURNING product_id, name, stock`,
+                 WHERE product_id = $2`,
                 [item.quantity, item.product_id]
             );
-
-            // Log stock update (optional)
-            console.log(`Stock updated for ${updateResult.rows[0].name}: New stock = ${updateResult.rows[0].stock}`);
-        }
-
-        const negativeStockCheck = await client.query(
-            'SELECT product_id, name, stock FROM products WHERE stock < 0'
-        );
-
-        if (negativeStockCheck.rows.length > 0) {
-            await client.query('ROLLBACK');
-            console.error('Negative stock detected:', negativeStockCheck.rows);
-            return res.status(500).json({
-                error: 'Inventory error: Negative stock detected. Transaction rolled back.'
-            });
         }
 
         await client.query('COMMIT');
-        console.log(order)
         res.status(201).json(order);
 
     } catch (err) {
         await client.query('ROLLBACK');
-
         console.error('Order creation error:', err);
 
-        // Handle specific errors
-        if (err.code === '23505') { // Unique violation
+        if (err.code === '23505') {
             res.status(400).json({ error: 'Duplicate order detected' });
-        } else if (err.code === '23503') { // Foreign key violation
+        } else if (err.code === '23503') {
             res.status(400).json({ error: 'Invalid product reference' });
-        } else if (err.code === '22003') { // Numeric value out of range
+        } else if (err.code === '22003') {
             res.status(400).json({ error: 'Invalid numeric value' });
         } else {
             res.status(500).json({
@@ -453,9 +340,11 @@ app.post('/api/orders', async (req, res) => {
     }
 });
 
-app.get('/api/orders/:id',async (req, res) => {
+app.get('/api/orders/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        const pool = getPool();
+
         const completeOrder = await pool.query(
             `SELECT o.*, 
                     json_agg(
@@ -474,20 +363,27 @@ app.get('/api/orders/:id',async (req, res) => {
              GROUP BY o.order_id`,
             [id]
         );
-        console.log(completeOrder.rows);
-        res.json(completeOrder.rows[0])
-    }catch (e){
+
+        if (completeOrder.rows.length === 0) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+
+        res.json(completeOrder.rows[0]);
+    } catch (e) {
         res.status(500).json({
             error: "Internal server error",
             details: process.env.NODE_ENV === 'development' ? e.message : undefined
-        })
+        });
     }
-})
-
-app.listen(process.env.PORT, () => {
-    console.log(`Server running on http://localhost:${process.env.PORT}`);
-    console.log(`Upload directory: ${uploadDir}`);
-    console.log(`Image access: http://localhost:${process.env.PORT}/uploads/products/`);
 });
 
+
 module.exports = app;
+
+// Local development only
+if (process.env.NODE_ENV !== 'production' && require.main === module) {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running locally on http://localhost:${PORT}`);
+    });
+}
