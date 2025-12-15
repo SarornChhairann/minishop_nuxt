@@ -6,8 +6,8 @@ const cloudinary = require('cloudinary').v2;
 const {memoryStorage} = require("multer");
 const multer = require("multer");
 const path = require("path");
+const {initializeDatabase} = require("../database/db-init");
 require('dotenv').config();
-
 
 const app = express();
 
@@ -15,6 +15,8 @@ app.use(morgan('dev'));
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+initializeDatabase().then(r => (console.log(r)));
 
 // PostgreSQL connection
 let pool = null;
@@ -213,6 +215,7 @@ app.get('/api/products', async (req, res) => {
           ORDER BY product_id
         `;
 
+        const pool = getPool();
         const result = await pool.query(query, params);
         res.json(result.rows);
 
@@ -228,6 +231,7 @@ app.get('/api/products', async (req, res) => {
 app.get('/api/products/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        const pool = getPool();
         const result = await pool.query('SELECT * FROM products WHERE product_id = $1 ', [id]);
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Product not found' });
