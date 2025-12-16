@@ -47,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits, watch } from 'vue';
+import { ref, watch } from 'vue';
 
 export interface ConfirmDialogProps {
   modelValue?: boolean;
@@ -70,12 +70,22 @@ const props = withDefaults(defineProps<ConfirmDialogProps>(), {
   iconClass: 'text-red-600'
 });
 
-const emit = defineEmits(['update:modelValue', 'confirm', 'cancel']);
+interface Emits {
+  (e: 'update:modelValue', value: boolean): void;
+  (e: 'confirm'): void;
+  (e: 'cancel'): void;
+}
+
+const emit = defineEmits<Emits>();
 
 const isOpen = ref(props.modelValue);
 
 watch(() => props.modelValue, (newVal) => {
   isOpen.value = newVal;
+});
+
+watch(isOpen, (newVal) => {
+  emit('update:modelValue', newVal);
 });
 
 const onConfirm = () => {
@@ -90,10 +100,14 @@ const onCancel = () => {
 
 const close = () => {
   isOpen.value = false;
-  emit('update:modelValue', false);
 };
 
-defineExpose({
+interface ExposedMethods {
+  show: () => void;
+  hide: () => void;
+}
+
+defineExpose<ExposedMethods>({
   show: () => { isOpen.value = true; },
   hide: close
 });
