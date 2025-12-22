@@ -117,14 +117,4 @@ const initializeDatabase = async () => {
     }
 };
 
-// Run initialization if called directly
-if (require.main === module) {
-    initializeDatabase()
-        .then(() => process.exit(0))
-        .catch(err => {
-            console.error('Failed to initialize database:', err);
-            process.exit(1);
-        });
-}
-
 module.exports = { initializeDatabase };
