@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-    baseURL: 'https://minishop-api.vercel.app/api',
+    baseURL: 'https://vanny-minishop-fr2h.vercel.app/api',
     headers: {
         'Cache-Control': 'no-cache'
     }
