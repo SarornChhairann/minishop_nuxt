@@ -11,6 +11,7 @@ export const getPool = () => {
             idleTimeoutMillis: 30000,
             connectionTimeoutMillis: 5000
         });
+        console.log('Connected to Neon DB');
     }
     return pool;
 };
