@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-6xl mx-auto m-4">
+  <div class="max-w-6xl mx-auto m-4 text-gray-800 p-4">
     <h1 class="text-3xl font-bold mb-8">Shopping Cart</h1>
 
     <div v-if="cartStore.items.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
@@ -64,7 +64,7 @@
                         type="number"
                         min="1"
                         :max="item.availableStock"
-                        class="w-12 h-8 text-center border-y"
+                        class="w-12 h-8 text-center border-y bg-white"
                     >
                     <button
                         @click="incrementQuantity(item.product_id)"

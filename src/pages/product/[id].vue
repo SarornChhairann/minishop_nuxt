@@ -59,7 +59,7 @@
                     type="number"
                     min="1"
                     :max="product.stock"
-                    class="w-16 text-center py-2 border-x"
+                    class="w-16 text-center py-2 border-x bg-white"
                 >
                 <button
                     @click="incrementQuantity"

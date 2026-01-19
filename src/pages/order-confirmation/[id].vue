@@ -300,7 +300,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { orderService } from '@/services/api';
-import {formatDate} from "@/composables/useDateFormatter.ts";
+import { formatDate } from '../../composables/useDateFormatter';
 
 interface OrderItem {
   product_id: number;

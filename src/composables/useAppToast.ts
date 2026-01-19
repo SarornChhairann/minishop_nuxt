@@ -1,31 +1,15 @@
-import type { ToastOptions } from '#ui/toast'
+import type { Notification } from '#ui/types'
 
 export function useAppToast() {
-    const nuxtApp = useNuxtApp()
-    
-    // Check if $toast exists (safer access)
-    const nuxtToast = nuxtApp.$toast
-    
-    if (!nuxtToast) {
-        console.warn('NuxtUI toast not available. Make sure @nuxt/ui is properly installed and configured.')
-        // Return a fallback implementation
-        return {
-            toast: {
-                success: (message: string, timeout?: number) => console.log('✅', message),
-                error: (message: string, timeout?: number) => console.error('❌', message),
-                info: (message: string, timeout?: number) => console.info('ℹ️', message),
-                warning: (message: string, timeout?: number) => console.warn('⚠️', message)
-            }
-        }
-    }
+    const toast = useToast()
 
     const showToast = (
         message: string, 
         type: 'success' | 'error' | 'info' | 'warning' = 'info', 
         timeout: number = 3000,
-        options?: Partial<ToastOptions>
+        options?: Partial<Notification>
     ) => {
-        const colorMap: Record<'success' | 'error' | 'info' | 'warning', string> = {
+        const colorMap: Record<'success' | 'error' | 'info' | 'warning', Notification['color']> = {
             success: 'green',
             error: 'red',
             info: 'blue',
@@ -40,7 +24,7 @@ export function useAppToast() {
         }
         
         try {
-            const toastId = nuxtToast.add({
+            const notification = toast.add({
                 title: message,
                 color: colorMap[type],
                 icon: iconMap[type],
@@ -48,7 +32,7 @@ export function useAppToast() {
                 ...options
             })
             
-            return toastId // Return the ID for potential programmatic removal
+            return notification.id // Return the ID for potential programmatic removal
         } catch (error) {
             console.error('Toast error:', error)
             // Fallback to console logging
@@ -64,26 +48,26 @@ export function useAppToast() {
     }
 
     // Helper for removing toasts by ID
-    const removeToast = (id: number) => {
-        if (nuxtToast?.remove) {
-            nuxtToast.remove(id)
+    const removeToast = (id: string) => {
+        if (toast?.remove) {
+            toast.remove(id)
         }
     }
 
-    const toast = {
-        success: (message: string, timeout?: number, options?: Partial<ToastOptions>) => 
+    const appToast = {
+        success: (message: string, timeout?: number, options?: Partial<Notification>) => 
             showToast(message, 'success', timeout, options),
-        error: (message: string, timeout?: number, options?: Partial<ToastOptions>) => 
+        error: (message: string, timeout?: number, options?: Partial<Notification>) => 
             showToast(message, 'error', timeout, options),
-        info: (message: string, timeout?: number, options?: Partial<ToastOptions>) => 
+        info: (message: string, timeout?: number, options?: Partial<Notification>) => 
             showToast(message, 'info', timeout, options),
-        warning: (message: string, timeout?: number, options?: Partial<ToastOptions>) => 
+        warning: (message: string, timeout?: number, options?: Partial<Notification>) => 
             showToast(message, 'warning', timeout, options),
         remove: removeToast
     }
 
     return {
-        toast
+        toast: appToast
     }
 }
 

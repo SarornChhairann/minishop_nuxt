@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="min-h-screen bg-gray-50">
+  <div id="app" class="min-h-screen bg-gray-50 text-gray-800">
     <!-- Top Announcement Bar -->
     <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center py-2 px-4 text-sm">
       🚚 Free shipping on orders over $50 | Shop now!
@@ -157,7 +157,7 @@
               <input 
                 type="email" 
                 placeholder="Your email" 
-                class="px-4 py-2 w-full rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                class="px-4 py-2 w-full rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
               >
               <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-md transition-colors">
                 Subscribe

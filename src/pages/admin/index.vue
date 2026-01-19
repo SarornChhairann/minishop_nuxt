@@ -32,7 +32,7 @@
                 v-model="searchQuery"
                 type="text"
                 placeholder="Search products..."
-                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
                 @input="debouncedSearch"
             >
           </div>
@@ -42,7 +42,7 @@
           <select
               id="status"
               v-model="statusFilter"
-              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white"
               @change="fetchProducts"
           >
             <option value="">All Status</option>
@@ -55,7 +55,7 @@
           <select
               id="sort"
               v-model="sortBy"
-              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white"
           >
             <option value="created_at">Date Added</option>
             <option value="id">ID</option>

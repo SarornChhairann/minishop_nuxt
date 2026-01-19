@@ -1,8 +1,8 @@
 <template>
-  <div class="max-w-4xl mx-auto">
+  <div class="max-w-4xl mx-auto p-4 text-gray-800">
     <h1 class="text-3xl font-bold mb-8">Checkout</h1>
 
-    <div v-if="cartStore.items.length === 0" class="text-center py-12">
+    <div v-if="cartStore.items.length === 0" class="text-center py-12 bg-white rounded-lg shadow">
       <h2 class="text-2xl font-bold text-gray-600 mb-4">Your cart is empty</h2>
       <router-link to="/" class="text-blue-600 hover:text-blue-800 underline">
         Return to shop
@@ -26,7 +26,7 @@
                     type="text"
                     id="name"
                     required
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                     placeholder="Enter your fullname"
                 >
               </div>
@@ -40,7 +40,7 @@
                     type="email"
                     id="email"
                     required
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                     placeholder="test@example.com"
                 >
               </div>
@@ -54,7 +54,7 @@
                     type="tel"
                     id="phone"
                     required
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                     placeholder="(123) 456-7890"
                 >
               </div>
@@ -68,7 +68,7 @@
                     id="address"
                     required
                     rows="4"
-                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                     placeholder="Phnom Penh, Cambodia"
                 ></textarea>
               </div>
