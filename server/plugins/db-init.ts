@@ -3,11 +3,18 @@ import { getPool } from '../utils/db';
 declare function defineNitroPlugin(fn: (nitroApp: any) => any): any;
 
 export default defineNitroPlugin(async (nitroApp) => {
-    const pool = getPool();
-    const client = await pool.connect();
+    // Skip DB init during build/prerender to prevent build crashes
+    if (process.env.NODE_ENV === 'prerender' || process.env.NITRO_PRESET === 'vercel') {
+        console.log('Skipping DB initialization during build/prerender');
+        return;
+    }
 
-    // SQL schema
-    const schemaSQL = `
+    try {
+        const pool = getPool();
+        const client = await pool.connect();
+
+        // SQL schema
+        const schemaSQL = `
     -- Products table
     CREATE TABLE IF NOT EXISTS products (
         product_id SERIAL PRIMARY KEY,
@@ -108,6 +115,9 @@ export default defineNitroPlugin(async (nitroApp) => {
         // We don't want to crash the server if DB init fails (maybe temporary connection issue)
         // But logging it is important
     } finally {
-        client.release();
+        if (client) client.release();
     }
+} catch (error: any) {
+    console.error('Failed to connect to database during init:', error.message);
+}
 });
