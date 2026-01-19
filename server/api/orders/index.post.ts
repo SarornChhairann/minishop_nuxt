@@ -76,7 +76,7 @@ export default defineEventHandler(async (event) => {
                 `INSERT INTO order_items 
                  (order_id, product_id, quantity, unit_price, subtotal) 
                  VALUES ($1, $2, $3, $4, $5)`,
-                [order.order_id, item.product_id, item.price, item.subtotal]
+                [order.order_id, item.product_id, item.quantity, item.price, item.subtotal]
             );
 
             await client.query(
