@@ -4,8 +4,14 @@ let pool: Pool | null = null;
 
 export const getPool = () => {
     if (!pool) {
+        const connectionString = process.env.DATABASE_URL;
+        if (!connectionString) {
+            console.error('❌ DATABASE_URL is missing in environment variables');
+            throw new Error('DATABASE_URL is not defined');
+        }
+
         pool = new Pool({
-            connectionString: process.env.DATABASE_URL,
+            connectionString,
             ssl: { rejectUnauthorized: false },
             max: 1,
             idleTimeoutMillis: 30000,
