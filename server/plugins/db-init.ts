@@ -4,7 +4,7 @@ declare function defineNitroPlugin(fn: (nitroApp: any) => any): any;
 
 export default defineNitroPlugin(async (nitroApp) => {
     // Skip DB init during build/prerender to prevent build crashes
-    if (process.env.NODE_ENV === 'prerender' || process.env.NITRO_PRESET === 'vercel') {
+    if (process.env.NODE_ENV === 'prerender' || process.env.NITRO_PRESET === 'vercel' || process.env.VERCEL) {
         console.log('Skipping DB initialization during build/prerender');
         return;
     }
