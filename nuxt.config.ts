@@ -21,6 +21,7 @@ export default defineNuxtConfig({
   },
   
   srcDir: 'src/',
+  serverDir: 'server/',
 
   imports: {
     dirs: ['stores']
