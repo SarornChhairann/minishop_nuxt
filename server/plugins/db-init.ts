@@ -1,8 +1,6 @@
 import { getPool } from '../utils/db';
 
-declare function defineNitroPlugin(fn: (nitroApp: any) => any): any;
-
-export default defineNitroPlugin(async (nitroApp) => {
+export default async (nitroApp: any) => {
     // Skip DB init during build/prerender to prevent build crashes
     if (process.env.NODE_ENV === 'prerender' || process.env.NITRO_PRESET === 'vercel' || process.env.VERCEL) {
         console.log('Skipping DB initialization during build/prerender');
@@ -120,4 +118,4 @@ export default defineNitroPlugin(async (nitroApp) => {
 } catch (error: any) {
     console.error('Failed to connect to database during init:', error.message);
 }
-});
+}
