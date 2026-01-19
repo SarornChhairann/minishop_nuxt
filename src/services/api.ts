@@ -1,71 +1,52 @@
-import axios from 'axios'
-
-const api = axios.create({
-    baseURL: 'https://vanny-minishop-fr2h.vercel.app/api',
-    headers: {
-        'Cache-Control': 'no-cache'
-    }
-})
 
 export const productService = {
     async getProducts({status, search} : {status?: string, search?: string}) {
-        let product = 'products';
-        if(search && status){
-            product += `?search=${search}&status=${status}`;
-        }else if(status){
-           product += `?status=${status}`;
-        } else if(search){
-            product += `&search=${search}`;
-        }
-        const response = await api.get(`${product}`);
-        return response.data;
+        const query: any = {};
+        if (status && status.toLowerCase() !== 'all') query.status = status;
+        if (search) query.search = search;
+        
+        return await $fetch('/api/products', { query });
     },
 
     async getProduct(id: number) {
-        const response = await api.get(`/products/${id}`)
-        return response.data
+        return await $fetch(`/api/products/${id}`);
     },
 
     async createProduct(productData: FormData) {
-        const response = await api.post('/products', productData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        })
-        return response.data
+        return await $fetch('/api/products', {
+            method: 'POST',
+            body: productData
+        });
     },
 
     async updateProduct(id: number, productData: FormData) {
-        const response = await api.put(`/products/${id}`, productData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        })
-        return response.data
+        return await $fetch(`/api/products/${id}`, {
+            method: 'PUT',
+            body: productData
+        });
     },
 
     async deleteProduct(id: number) {
-        const response = await api.delete(`/products/${id}`)
-        return response.data;
+        return await $fetch(`/api/products/${id}`, {
+            method: 'DELETE'
+        });
     },
 }
 
 export const orderService = {
     async createOrder(orderData: any) {
-        const response = await api.post('/orders', orderData)
-        return response.data
+        return await $fetch('/api/orders', {
+            method: 'POST',
+            body: orderData
+        });
     },
 
     async getOrder(id: number) {
-        const response = await api.get(`/orders/${id}`,
-            {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-        console.log(response.data)
-        return response.data
+        return await $fetch(`/api/orders/${id}`);
     },
 }
 
-export default api
+export default {
+    ...productService,
+    ...orderService
+}

@@ -10,9 +10,9 @@
       </div>
       <h2 class="text-2xl font-bold text-gray-600 mb-4">Your cart is empty</h2>
       <p class="text-gray-500 mb-6">Add some products to your cart to continue shopping</p>
-      <router-link to="/" class="inline-block bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700">
+      <NuxtLink to="/" class="inline-block bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700">
         Continue Shopping
-      </router-link>
+      </NuxtLink>
     </div>
 
     <div v-else class="md:flex gap-8">
@@ -100,12 +100,12 @@
         </div>
 
         <div class="flex justify-between">
-          <router-link to="/" class="text-blue-600 hover:text-blue-800 font-medium flex items-center transition-colors">
+          <NuxtLink to="/" class="text-blue-600 hover:text-blue-800 font-medium flex items-center transition-colors">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
             </svg>
             Continue Shopping
-          </router-link>
+          </NuxtLink>
           <button
               @click="showClearCartConfirmation"
               class="text-red-600 hover:text-red-800 font-medium flex items-center transition-colors"
@@ -190,170 +190,129 @@
 </template>
 
 <script setup lang="ts">
-import { useCartStore } from '../stores/cart';
-import { useRouter } from 'vue-router';
-import { useFormatters } from '@/composables/useFormatters';
-import { useToast } from "@/composables/useToast";
-import { TrashIcon, ExclamationTriangleIcon } from "@heroicons/vue/24/outline";
-import ConfirmDialog from '@/components/ui/ConfirmDialog.vue';
+import { useCartStore, type CartItem } from '~/stores/cart';
+import { useFormatters } from '~/composables/useFormatters';
+import { useAppToast } from '~/composables/useAppToast';
+import { TrashIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
+import ConfirmDialog from '~/components/ui/ConfirmDialog.vue';
 import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 
 const cartStore = useCartStore();
 const router = useRouter();
 const { formatPrice } = useFormatters();
-const { toast } = useToast();
+const { toast } = useAppToast();
 
-// Dialog state
 const isConfirmOpen = ref(false);
-const confirmOptions = ref({
-  title: '',
-  message: '',
-  confirmText: 'Confirm',
-  cancelText: 'Cancel',
-  icon: ExclamationTriangleIcon,
-  iconContainerClass: '',
-  iconClass: ''
-});
+const itemToDelete = ref<CartItem | null>(null);
+const isClearCart = ref(false);
 
-// Pending actions
-const pendingAction = ref<{
-  type: 'removeItem' | 'clearCart';
-  productId?: number;
-  itemName?: string;
-} | null>(null);
-
-// Computed properties
-const discountAmount = computed(() => {
-  return cartStore.totalPrice > 100 ? cartStore.totalPrice * 0.1 : 0;
-});
-
-const finalTotal = computed(() => {
-  return cartStore.totalPrice - discountAmount.value;
-});
-
-// Confirmation dialog functions
-const showDeleteConfirmation = (item: any) => {
-  pendingAction.value = {
-    type: 'removeItem',
-    productId: item.product_id,
-    itemName: item.name
-  };
-
-  confirmOptions.value = {
-    title: 'Remove Item',
-    message: `Are you sure you want to remove "${item.name}" from your cart?`,
-    confirmText: 'Remove',
-    cancelText: 'Keep Item',
-    icon: TrashIcon,
-    iconContainerClass: 'bg-red-100',
-    iconClass: 'text-red-600'
-  };
-
-  isConfirmOpen.value = true;
-};
-
-const showClearCartConfirmation = () => {
-  pendingAction.value = {
-    type: 'clearCart'
-  };
-
-  confirmOptions.value = {
-    title: 'Clear Cart',
-    message: `Are you sure you want to clear your entire cart? This will remove ${cartStore.items.length} item(s).`,
-    confirmText: 'Clear Cart',
-    cancelText: 'Keep Items',
-    icon: ExclamationTriangleIcon,
-    iconContainerClass: 'bg-yellow-100',
-    iconClass: 'text-yellow-600'
-  };
-
-  isConfirmOpen.value = true;
-};
-
-const handleConfirm = () => {
-  if (!pendingAction.value) return;
-
-  switch (pendingAction.value.type) {
-    case 'removeItem':
-      if (pendingAction.value.productId) {
-        cartStore.removeFromCart(pendingAction.value.productId);
-        toast.success(`"${pendingAction.value.itemName}" removed from cart`);
-      }
-      break;
-
-    case 'clearCart':
-      cartStore.clearCart();
-      toast.success('Cart cleared successfully');
-      break;
+const confirmOptions = computed(() => {
+  if (isClearCart.value) {
+    return {
+      title: 'Clear Cart',
+      message: 'Are you sure you want to remove all items from your cart? This action cannot be undone.',
+      confirmText: 'Clear All',
+      cancelText: 'Cancel',
+      icon: ExclamationTriangleIcon,
+      iconContainerClass: 'bg-red-100',
+      iconClass: 'text-red-600'
+    };
+  } else {
+    return {
+      title: 'Remove Item',
+      message: `Are you sure you want to remove "${itemToDelete.value?.name}" from your cart?`,
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      icon: TrashIcon,
+      iconContainerClass: 'bg-red-100',
+      iconClass: 'text-red-600'
+    };
   }
+});
 
-  pendingAction.value = null;
-  isConfirmOpen.value = false;
+const handleImageError = (e: Event) => {
+  const target = e.target as HTMLImageElement;
+  target.src = 'https://via.placeholder.com/80x80?text=No+Image';
 };
 
-const handleCancel = () => {
-  pendingAction.value = null;
-  isConfirmOpen.value = false;
+const updateQuantityInput = (productId: number, quantity: number) => {
+  if (quantity < 1) {
+    cartStore.updateQuantity(productId, 1);
+  } else {
+    // Check stock limit if needed
+    const item = cartStore.items.find(i => i.product_id === productId);
+    if (item && quantity > item.availableStock) {
+      cartStore.updateQuantity(productId, item.availableStock);
+      toast.error(`Only ${item.availableStock} items available in stock`);
+    } else {
+      cartStore.updateQuantity(productId, quantity);
+    }
+  }
 };
 
-// Quantity management
+const incrementQuantity = (productId: number) => {
+  const item = cartStore.items.find(i => i.product_id === productId);
+  if (item) {
+    if (item.quantity < item.availableStock) {
+      cartStore.updateQuantity(productId, item.quantity + 1);
+    } else {
+      toast.error(`Cannot add more. Only ${item.availableStock} in stock.`);
+    }
+  }
+};
+
 const decrementQuantity = (productId: number) => {
-  const item = cartStore.items.find(item => item.product_id === productId);
+  const item = cartStore.items.find(i => i.product_id === productId);
   if (item && item.quantity > 1) {
     cartStore.updateQuantity(productId, item.quantity - 1);
   }
 };
 
-const incrementQuantity = (productId: number) => {
-  const item = cartStore.items.find(item => item.product_id === productId);
-  if (item && item.quantity < item.availableStock) {
-    cartStore.updateQuantity(productId, item.quantity + 1);
-  } else if (item) {
-    toast.error(`Cannot add more. Only ${item.availableStock} available in stock.`);
-  }
+const showDeleteConfirmation = (item: any) => {
+  itemToDelete.value = item;
+  isClearCart.value = false;
+  isConfirmOpen.value = true;
 };
 
-const updateQuantityInput = (productId: number, newQuantity: number) => {
-  const item = cartStore.items.find(item => item.product_id === productId);
-
-  if (!item) return;
-
-  if (newQuantity < 1) {
-    cartStore.updateQuantity(productId, 1);
-    toast.info('Quantity cannot be less than 1');
-    return;
-  }
-
-  if (newQuantity > item.availableStock) {
-    cartStore.updateQuantity(productId, item.availableStock);
-    toast.error(`Quantity limited to ${item.availableStock} (available stock)`);
-    return;
-  }
-
-  cartStore.updateQuantity(productId, newQuantity);
+const showClearCartConfirmation = () => {
+  isClearCart.value = true;
+  isConfirmOpen.value = true;
 };
 
-// Calculations
+const handleConfirm = () => {
+  if (isClearCart.value) {
+    cartStore.clearCart();
+    toast.success('Cart cleared successfully');
+  } else if (itemToDelete.value) {
+    cartStore.removeFromCart(itemToDelete.value.product_id);
+    toast.success(`${itemToDelete.value.name} removed from cart`);
+  }
+  isConfirmOpen.value = false;
+  itemToDelete.value = null;
+};
+
+const handleCancel = () => {
+  isConfirmOpen.value = false;
+  itemToDelete.value = null;
+};
+
 const calculateTotal = () => {
-  return finalTotal.value;
+  let total = cartStore.totalPrice;
+  
+  // Apply discount if total > 100
+  if (total > 100) {
+    total = total * 0.9; // 10% discount
+  }
+  
+  return total;
 };
 
-// Navigation
 const goToCheckout = () => {
   if (cartStore.items.length === 0) {
     toast.error('Your cart is empty');
     return;
   }
   router.push('/checkout');
-};
-
-// Image error handling
-const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement;
-  const fallbackUrl = 'https://via.placeholder.com/400x300?text=Product+Image';
-  if (img.src !== fallbackUrl && !img.src.includes('placeholder.com')) {
-    img.src = fallbackUrl;
-    img.onerror = null;
-  }
 };
 </script>

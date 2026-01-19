@@ -1,0 +1,3 @@
+<template>
+  <AdminProductForm />
+</template>

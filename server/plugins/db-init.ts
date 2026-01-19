@@ -1,61 +1,56 @@
-const { Pool } = require('pg');
-require('dotenv').config();
+import { getPool } from '../utils/db';
 
-// Database connection
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
+declare function defineNitroPlugin(fn: (nitroApp: any) => any): any;
 
-// SQL schema
-const schemaSQL = `
--- Products table
-CREATE TABLE IF NOT EXISTS products (
-    product_id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description VARCHAR(500),
-    price DECIMAL(10,2) NOT NULL,
-    stock INT NOT NULL DEFAULT 0,
-    image_url VARCHAR(255),
-    status VARCHAR(10) DEFAULT 'ACTIVE',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Orders table
-CREATE TABLE IF NOT EXISTS orders (
-    order_id SERIAL PRIMARY KEY,
-    customer_name VARCHAR(100) NOT NULL,
-    customer_email VARCHAR(100) NOT NULL,
-    customer_phone VARCHAR(20),
-    shipping_address VARCHAR(255) NOT NULL,
-    total_amount DECIMAL(10,2) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Order items table
-CREATE TABLE IF NOT EXISTS order_items (
-    order_item_id SERIAL PRIMARY KEY,
-    order_id INT REFERENCES orders(order_id) ON DELETE CASCADE,
-    product_id INT REFERENCES products(product_id),
-    quantity INT NOT NULL,
-    unit_price DECIMAL(10,2) NOT NULL,
-    subtotal DECIMAL(10,2) NOT NULL
-);
-`;
-
-// Create indexes
-const indexesSQL = `
--- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
-CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at);
-CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
-CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
-CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
-`;
-
-// Initialize database
-const initializeDatabase = async () => {
+export default defineNitroPlugin(async (nitroApp) => {
+    const pool = getPool();
     const client = await pool.connect();
+
+    // SQL schema
+    const schemaSQL = `
+    -- Products table
+    CREATE TABLE IF NOT EXISTS products (
+        product_id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        description VARCHAR(500),
+        price DECIMAL(10,2) NOT NULL,
+        stock INT NOT NULL DEFAULT 0,
+        image_url VARCHAR(255),
+        status VARCHAR(10) DEFAULT 'ACTIVE',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Orders table
+    CREATE TABLE IF NOT EXISTS orders (
+        order_id SERIAL PRIMARY KEY,
+        customer_name VARCHAR(100) NOT NULL,
+        customer_email VARCHAR(100) NOT NULL,
+        customer_phone VARCHAR(20),
+        shipping_address VARCHAR(255) NOT NULL,
+        total_amount DECIMAL(10,2) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Order items table
+    CREATE TABLE IF NOT EXISTS order_items (
+        order_item_id SERIAL PRIMARY KEY,
+        order_id INT REFERENCES orders(order_id) ON DELETE CASCADE,
+        product_id INT REFERENCES products(product_id),
+        quantity INT NOT NULL,
+        unit_price DECIMAL(10,2) NOT NULL,
+        subtotal DECIMAL(10,2) NOT NULL
+    );
+    `;
+
+    // Create indexes
+    const indexesSQL = `
+    -- Create indexes for better performance
+    CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
+    CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at);
+    CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
+    CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+    CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
+    `;
 
     try {
         console.log('🚀 Starting database initialization...');
@@ -108,13 +103,11 @@ const initializeDatabase = async () => {
 
         console.log('\nDatabase initialization completed successfully!');
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error initializing database:', error.message);
-        throw error;
+        // We don't want to crash the server if DB init fails (maybe temporary connection issue)
+        // But logging it is important
     } finally {
         client.release();
-        await pool.end();
     }
-};
-
-module.exports = { initializeDatabase };
+});

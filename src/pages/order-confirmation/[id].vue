@@ -24,7 +24,7 @@
         </div>
         <h1 class="text-3xl font-bold text-gray-900 mb-2">Order Not Found</h1>
         <p class="text-gray-600 mb-6">{{ error }}</p>
-        <router-link
+        <NuxtLink
             to="/"
             class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
         >
@@ -32,7 +32,7 @@
             <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
           </svg>
           Return to Home
-        </router-link>
+        </NuxtLink>
       </div>
     </div>
 
@@ -279,7 +279,7 @@
                 </svg>
                 Print Receipt
               </button>
-              <router-link
+              <NuxtLink
                   to="/"
                   class="w-full flex items-center justify-center px-4 py-3 border border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition-colors"
               >
@@ -287,7 +287,7 @@
                   <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                 </svg>
                 Continue Shopping
-              </router-link>
+              </NuxtLink>
             </div>
           </div>
         </div>
@@ -351,7 +351,7 @@ onMounted(async () => {
     }
   } catch (err: any) {
     console.error('Failed to load order:', err);
-    error.value = err.response?.data?.error || 'Failed to load order details';
+    error.value = err?.data?.error || 'Failed to load order details';
   } finally {
     loading.value = false;
   }

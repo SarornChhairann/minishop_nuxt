@@ -67,9 +67,10 @@ import {
   InformationCircleIcon,
   ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline'
-import {useToast} from "@/composables/useToast.ts";
+import {useAppToast} from "@/composables/useAppToast.ts";
 
-const { toasts, removeToast } = useToast()
+const { toasts, removeToast } = useAppToast()
+
 
 const getIcon = (type: string) => {
   switch (type) {

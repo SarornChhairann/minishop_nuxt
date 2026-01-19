@@ -313,13 +313,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue';
+import { productService } from '~/services/api';
 import { useRoute, useRouter } from 'vue-router';
-import { productService } from '@/services/api';
 
 const route = useRoute();
 const router = useRouter();
 
-const isEditMode = computed(() => route.name === 'EditProduct');
+const isEditMode = computed(() => !!route.params.id);
 const loading = ref(false);
 const submitting = ref(false);
 const imagePreview = ref<string>('');
@@ -469,10 +469,9 @@ async function submitForm() {
   } catch (error: any) {
     console.error('Error saving product:', error);
 
-    // Handle specific error messages
-    if (error.response?.data?.error) {
-      alert(`Failed to save product: ${error.response.data.error}`);
-    } else if (error.message?.includes('Network Error')) {
+    if (error?.data?.error) {
+      alert(`Failed to save product: ${error.data.error}`);
+    } else if (error?.message?.includes('Network Error')) {
       alert('Network error. Please check if the server is running.');
     } else {
       alert('Failed to save product. Please try again.');

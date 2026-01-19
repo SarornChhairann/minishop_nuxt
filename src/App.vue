@@ -11,32 +11,32 @@
         <div class="flex justify-between h-16">
           <!-- Logo -->
           <div class="flex items-center">
-            <router-link to="/" class="flex-shrink-0 flex items-center" @click="forceUpdate">
-              <img class="h-8 w-auto" src="./assets/mini-shop.png" alt="MiniShop">
+            <NuxtLink to="/" class="flex-shrink-0 flex items-center" @click="forceUpdate">
+              <img class="h-8 w-auto" src="~/assets/mini-shop.png" alt="MiniShop">
               <span class="ml-2 text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">MiniShop</span>
-            </router-link>
+            </NuxtLink>
           </div>
           
           <!-- Desktop Navigation -->
           <div class="hidden md:ml-6 md:flex md:items-center md:space-x-8">
-            <router-link 
+            <NuxtLink 
               to="/" 
               class="px-3 py-2 text-sm font-medium hover:text-blue-600 transition-colors"
               :class="{ 'text-blue-600': currentRoute === '/' }"
             >
               Home
-            </router-link>
-            <router-link to="/about" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors" :class="{ 'text-blue-600': currentRoute === '/about' }">
+            </NuxtLink>
+            <NuxtLink to="/about" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors" :class="{ 'text-blue-600': currentRoute === '/about' }">
               About
-            </router-link>
-            <router-link to="/contact" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors" :class="{ 'text-blue-600': currentRoute === '/contact' }">
+            </NuxtLink>
+            <NuxtLink to="/contact" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors" :class="{ 'text-blue-600': currentRoute === '/contact' }">
               Contact
-            </router-link>
+            </NuxtLink>
           </div>
           
           <!-- Right side icons -->
           <div class="flex items-center space-x-4">
-            <router-link 
+            <NuxtLink 
               to="/cart" 
               class="p-2 rounded-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 relative"
               @click="forceUpdate"
@@ -48,9 +48,9 @@
                 class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                 {{ cartStore.items.length }}
               </span>
-            </router-link>
+            </NuxtLink>
             
-            <router-link 
+            <NuxtLink 
               to="/admin" 
               class="hidden md:flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               @click="forceUpdate"
@@ -60,7 +60,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               Admin
-            </router-link>
+            </NuxtLink>
             
             <!-- Mobile menu button -->
             <button @click="isMobileMenuOpen = !isMobileMenuOpen" class="md:hidden p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none">
@@ -76,13 +76,13 @@
       <!-- Mobile menu -->
       <div v-if="isMobileMenuOpen" class="md:hidden">
         <div class="pt-2 pb-3 space-y-1">
-          <router-link 
+          <NuxtLink 
             to="/" 
             class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
             @click="isMobileMenuOpen = false"
           >
             Home
-          </router-link>
+          </NuxtLink>
           <a href="#" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50">
             Shop
           </a>
@@ -95,20 +95,20 @@
           <a href="#" class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50">
             Contact
           </a>
-          <router-link 
+          <NuxtLink 
             to="/admin" 
             class="block px-3 py-2 text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50"
             @click="isMobileMenuOpen = false"
           >
             Admin Dashboard
-          </router-link>
+          </NuxtLink>
         </div>
       </div>
     </nav>
 
     <!-- Main Content -->
     <main class="flex-grow">
-      <router-view :key="routeKey" />
+      <NuxtPage :key="routeKey" />
     </main>
     
     <!-- Footer -->
@@ -131,7 +131,7 @@
               <li><a href="#" class="text-gray-400 hover:text-white text-sm transition-colors">Shop</a></li>
               <li><a href="#" class="text-gray-400 hover:text-white text-sm transition-colors">About Us</a></li>
               <li><a href="#" class="text-gray-400 hover:text-white text-sm transition-colors">Contact</a></li>
-              <li><router-link to="/admin" class="text-gray-400 hover:text-white text-sm transition-colors">Admin</router-link></li>
+              <li><NuxtLink to="/admin" class="text-gray-400 hover:text-white text-sm transition-colors">Admin</NuxtLink></li>
             </ul>
           </div>
           
@@ -199,57 +199,34 @@
     <button 
       v-show="isScrolled"
       @click="scrollToTop"
-      class="fixed bottom-6 right-6 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      class="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 z-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
       aria-label="Scroll to top"
     >
       <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
       </svg>
     </button>
-    
-    <!-- Debug info -->
-    <div v-if="showDebug" class="fixed bottom-4 right-4 bg-black bg-opacity-90 text-white p-4 rounded-lg text-sm shadow-xl z-50">
-      <div class="flex justify-between items-start mb-2">
-        <h4 class="font-semibold text-yellow-400">Debug Info</h4>
-        <button @click="toggleDebug" class="text-gray-400 hover:text-white">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-      <div class="space-y-1">
-        <p><span class="text-gray-400">Route:</span> {{ currentRoute }}</p>
-        <p><span class="text-gray-400">Component Key:</span> {{ routeKey }}</p>
-        <p><span class="text-gray-400">Cart Items:</span> {{ cartStore.items.length }}</p>
-      </div>
-    </div>
+    <UNotifications />
   </div>
-  <Toast />
 </template>
 
 <script setup lang="ts">
-import { RouterView, RouterLink, useRoute } from 'vue-router'
-import { ref, computed, watch, onMounted } from 'vue'
-import { useCartStore } from './stores/cart';
-import Toast from "@/components/ui/Toast.vue";
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { useCartStore } from '~/stores/cart';
+import { useRoute } from 'vue-router';
 
 const route = useRoute();
-const currentRoute = computed(() => route.path);
-const routeKey = ref(0);
+const routeKey = computed(() => route.fullPath);
+
 const cartStore = useCartStore();
-const showDebug = ref(false);
-const forceUpdateCounter = ref(0);
 const isMobileMenuOpen = ref(false);
 const isScrolled = ref(false);
+const currentRoute = computed(() => route.path);
 
-// Handle scroll effect for navbar
-onMounted(() => {
-  window.addEventListener('scroll', () => {
-    isScrolled.value = window.scrollY > 10;
-  });
-});
+const checkScroll = () => {
+  isScrolled.value = window.scrollY > 100;
+};
 
-// Scroll to top function
 const scrollToTop = () => {
   window.scrollTo({
     top: 0,
@@ -258,23 +235,16 @@ const scrollToTop = () => {
 };
 
 const forceUpdate = () => {
-  console.log('🔄 Forcing route update')
-  forceUpdateCounter.value++
-  routeKey.value++
-}
+  isMobileMenuOpen.value = false;
+  // In Nuxt 3, navigation automatically handles updates, 
+  // but if we need to force refresh, we can use refreshNuxtData or key change
+};
 
-function toggleDebug() {
-  showDebug.value = !showDebug.value
-}
+onMounted(() => {
+  window.addEventListener('scroll', checkScroll);
+});
 
-// Watch for route changes
-watch(
-    () => route.path,
-    (newPath, oldPath) => {
-      console.log(`🔄 Route changed: ${oldPath} → ${newPath}`)
-      console.log('Route object:', route)
-    }
-)
-
-console.log('📱 App.vue loaded')
+onUnmounted(() => {
+  window.removeEventListener('scroll', checkScroll);
+});
 </script>

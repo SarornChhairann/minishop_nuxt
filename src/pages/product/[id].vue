@@ -102,9 +102,9 @@
 
     <div v-else class="text-center py-12">
       <h2 class="text-2xl font-bold text-gray-600 mb-4">Product not found</h2>
-      <router-link to="/" class="text-blue-600 hover:text-blue-800 underline">
+      <NuxtLink to="/" class="text-blue-600 hover:text-blue-800 underline">
         Return to home page
-      </router-link>
+      </NuxtLink>
     </div>
   </div>
 </template>
@@ -112,10 +112,10 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import { productService } from '../services/api';
-import { useCartStore } from '../stores/cart';
-import {formatDate} from "@/composables/useDateFormatter.ts";
-import {useToast} from "@/composables/useToast.ts";
+import { productService } from '@/services/api';
+import { useCartStore } from '@/stores/cart';
+import { formatDate } from '@/composables/useDateFormatter';
+import { useAppToast } from '~/composables/useAppToast';
 
 const route = useRoute();
 const cartStore = useCartStore();
@@ -123,7 +123,7 @@ const cartStore = useCartStore();
 const product = ref<any>(null);
 const loading = ref(true);
 const quantity = ref(1);
-const {toast} = useToast()
+const { toast } = useAppToast();
 
 onMounted(async () => {
   await fetchProduct();

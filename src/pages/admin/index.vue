@@ -5,7 +5,7 @@
         <h1 class="text-2xl font-bold text-gray-900">Product Management</h1>
         <p class="mt-1 text-sm text-gray-500">Manage your product inventory and details</p>
       </div>
-      <router-link
+      <NuxtLink
           to="/admin/product/new"
           class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
       >
@@ -13,7 +13,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
         </svg>
         Add New Product
-      </router-link>
+      </NuxtLink>
     </div>
 
     <!-- Filters -->
@@ -85,7 +85,7 @@
         <h3 class="mt-2 text-lg font-medium text-gray-900">No products found</h3>
         <p class="mt-1 text-sm text-gray-500">Get started by creating a new product.</p>
         <div class="mt-6">
-          <router-link
+          <NuxtLink
               to="/admin/product/new"
               class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
@@ -93,7 +93,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
             New Product
-          </router-link>
+          </NuxtLink>
         </div>
       </div>
     </div>
@@ -179,7 +179,7 @@
                 <!-- Actions -->
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div class="flex items-center space-x-2 justify-end">
-                    <router-link
+                    <NuxtLink
                         :to="`/admin/product/edit/${product.product_id}`"
                         class="text-blue-600 hover:text-blue-900 p-1 rounded-md hover:bg-blue-50"
                         title="Edit"
@@ -187,7 +187,7 @@
                       <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
                       </svg>
-                    </router-link>
+                    </NuxtLink>
                     <button
                         @click="showDeleteConfirmation(product)"
                         class="text-red-600 hover:text-red-900 p-1 rounded-md hover:bg-red-50"
@@ -344,10 +344,9 @@
 
 <script setup lang="ts">
 import {computed, onMounted, ref, watch} from 'vue';
-import {productService} from '@/services/api.ts';
-import {AxiosError} from "axios";
-import {useToast} from "@/composables/useToast.ts";
-import {formatDate} from "@/composables/useDateFormatter.ts";
+import {productService} from '~/services/api';
+import {useAppToast} from "~/composables/useAppToast";
+import {formatDate} from "~/composables/useDateFormatter";
 
 interface Product {
   product_id: number;
@@ -377,7 +376,7 @@ const selectedProduct = ref<Product | null>(null);
 const isDeleting = ref(false);
 const dialogAnimation = ref('scale-100');
 
-const { toast } = useToast();
+const { toast } = useAppToast();
 
 // Debounce for search
 let searchTimeout: ReturnType<typeof setTimeout>;
@@ -484,7 +483,6 @@ async function confirmDelete() {
   try {
     await productService.deleteProduct(selectedProduct.value.product_id);
 
-    // Remove from local state
     const index = products.value.findIndex(p => p.product_id === selectedProduct.value!.product_id);
     if (index !== -1) {
       products.value.splice(index, 1);
@@ -492,12 +490,10 @@ async function confirmDelete() {
 
     toast.success('Product deleted successfully');
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting product:', error);
-    const message = error instanceof AxiosError
-        ? error.response?.data?.error || 'Failed to delete product'
-        : 'Failed to delete product';
-    toast.error(message)
+    const message = error?.data?.error || 'Failed to delete product';
+    toast.error(message);
   } finally {
     deletingProductId.value = null;
     cancelDelete();

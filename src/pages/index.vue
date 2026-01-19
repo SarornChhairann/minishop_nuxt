@@ -97,7 +97,7 @@
             </div>
 
             <div class="flex space-x-3">
-              <router-link
+              <NuxtLink
                   :to="`/product/${product.product_id}`"
                   class="flex-1 inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
               >
@@ -106,7 +106,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
                 View
-              </router-link>
+              </NuxtLink>
               
               <button
                   @click="addToCart(product)"
@@ -137,10 +137,10 @@
 
 <script setup lang="ts">
 import {onMounted, ref, watch} from 'vue'
-import {useCartStore} from '@/stores/cart'
-import {productService} from '@/services/api'
-import { useFormatters } from '@/composables/useFormatters'
-import {useToast} from "@/composables/useToast.ts";
+import {useCartStore} from '~/stores/cart'
+import {productService} from '~/services/api'
+import { useFormatters } from '~/composables/useFormatters'
+import {useAppToast} from "~/composables/useAppToast";
 
 // Define interface for Product
 interface Product {
@@ -179,7 +179,7 @@ const addingToCartId = ref<number | null>(null)
 // Initialize cart store
 const cartStore = useCartStore()
 const { formatPrice } = useFormatters()
-const {toast} = useToast()
+const {toast} = useAppToast()
 
 // Fetch products on mount
 onMounted(() => {
