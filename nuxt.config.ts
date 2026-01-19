@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   ssr: true,
   nitro: {
-    preset: 'vercel-edge'
+    preset: 'vercel'
   },
   devtools: { enabled: true },
   modules: ['@nuxt/ui', '@pinia/nuxt'],
