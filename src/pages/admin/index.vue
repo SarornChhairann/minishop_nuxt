@@ -492,7 +492,7 @@ async function confirmDelete() {
 
   } catch (error: any) {
     console.error('Error deleting product:', error);
-    const message = error?.data?.error || 'Failed to delete product';
+    const message = error.data?.statusMessage || error.statusMessage || error.message || 'Failed to delete product';
     toast.error(message);
   } finally {
     deletingProductId.value = null;

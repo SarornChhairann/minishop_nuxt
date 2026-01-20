@@ -11,8 +11,7 @@ export const getPool = () => {
         }
 
         pool = new Pool({
-            connectionString,
-            ssl: { rejectUnauthorized: false },
+            connectionString: connectionString.replace('sslmode=require', 'sslmode=verify-full'),
             max: 1,
             idleTimeoutMillis: 30000,
             connectionTimeoutMillis: 5000
